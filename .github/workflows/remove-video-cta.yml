@@ -1,0 +1,42 @@
+name: Remove unavailable video CTA
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  clean-video-cta:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Remove video CTA
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          old_css = '.btn-video{color:#0969df;background:#fff;border-color:#0969df}'
+          s = s.replace(old_css, '')
+          old_button = '<a class="btn btn-video" href="#">▶ Watch Intro (1 min)</a>'
+          s = s.replace(old_button, '')
+          p.write_text(s, encoding='utf-8')
+
+      - name: Commit cleaned page
+        shell: bash
+        run: |
+          if git diff --quiet -- index.html; then
+            echo "No video CTA found; nothing to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Remove unavailable video CTA"
+          git push
