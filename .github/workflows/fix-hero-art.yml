@@ -16,7 +16,7 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Fix hero artwork CSS
+      - name: Apply hero artwork and 12 SVG icons
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -25,13 +25,77 @@ jobs:
 
           old_layer = 'mix-blend-mode:multiply;filter:saturate(1.08) contrast(1.02);'
           new_layer = 'mix-blend-mode:normal;opacity:1;filter:saturate(1.08) contrast(1.02);'
-          if old_layer in s:
-              s = s.replace(old_layer, new_layer, 1)
+          s = s.replace(old_layer, new_layer, 1)
 
           old_bg = 'background:#edf8ff url("assets/hero/hero-visual.png") center/cover no-repeat'
           new_bg = 'background:#edf8ff url("assets/hero/hero-visual.png") 40% center/115% auto no-repeat'
-          if old_bg in s:
-              s = s.replace(old_bg, new_bg, 1)
+          s = s.replace(old_bg, new_bg, 1)
+
+          old_point_css = '.point-icon{width:32px;height:32px;display:grid;place-items:center;color:#0969df;font-size:27px}'
+          new_point_css = '.point-icon{width:34px;height:34px;display:grid;place-items:center;color:#0969df}.point-icon svg{width:32px;height:32px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}'
+          s = s.replace(old_point_css, new_point_css, 1)
+
+          replacements = [
+            (
+              '<span class="point-icon">▱</span>',
+              '<span class="point-icon"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M6 9h10c5 0 9 4 9 9v14c-2-3-5-5-9-5H6z"/><path d="M34 9H24c-5 0-9 4-9 9v14c2-3 5-5 9-5h10z"/><path d="M20 18v14"/></svg></span>'
+            ),
+            (
+              '<span class="point-icon">▥</span>',
+              '<span class="point-icon"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M6 33h28"/><rect x="8" y="21" width="6" height="10" rx="1"/><rect x="17" y="15" width="6" height="16" rx="1"/><rect x="26" y="9" width="6" height="22" rx="1"/><path d="M9 17l7-6 5 3 10-8"/></svg></span>'
+            ),
+            (
+              '<span class="point-icon">♢</span>',
+              '<span class="point-icon"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 4l13 5v9c0 8-5 13-13 18C12 31 7 26 7 18V9z"/><path d="M13 19l5 5 10-11"/></svg></span>'
+            ),
+            (
+              '<div class="lead-kicker">◈ &nbsp; TAKE THE FIRST STEP</div>',
+              '<div class="lead-kicker"><svg class="kicker-icon" viewBox="0 0 40 40" aria-hidden="true"><path d="M5 13l15-7 15 7-15 7z"/><path d="M11 17v7c4 3 14 3 18 0v-7"/><path d="M35 14v9"/><path d="M35 26a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/></svg> TAKE THE FIRST STEP</div>'
+            ),
+            (
+              '<span class="lead-kicker">',
+              '<span class="lead-kicker">'
+            )
+          ]
+          for old, new in replacements:
+              s = s.replace(old, new, 1)
+
+          # Four learning icons: Stock Market Basics, Calls & Puts, Premium & Expiry, Risk & Reward.
+          learn_old = [
+            '<svg viewBox="0 0 40 40"><path d="M8 9h9a7 7 0 0 1 7 7v16a7 7 0 0 0-7-7H8z"/><path d="M32 9h-9a7 7 0 0 0-7 7v16a7 7 0 0 1 7-7h9z"/><path d="M20 16v16"/></svg>',
+            '<svg viewBox="0 0 40 40"><path d="M8 29l9-9 6 5 10-14"/><path d="M25 11h8v8"/><path d="M8 13l7 7"/><path d="M15 13l-7 7"/></svg>',
+            '<svg viewBox="0 0 40 40"><rect x="9" y="6" width="22" height="28" rx="2"/><path d="M14 13h12M14 19h12M14 25h8"/></svg>',
+            '<svg viewBox="0 0 40 40"><path d="M7 31V9M7 31h27"/><path d="M12 25l7-7 5 4 8-11"/><path d="M27 11h5v5"/></svg>'
+          ]
+          learn_new = [
+            '<svg viewBox="0 0 40 40"><path d="M5 11h8c4 0 7 3 7 7v15c-2-3-4-4-7-4H5z"/><path d="M35 11h-8c-4 0-7 3-7 7v15c2-3 4-4 7-4h8z"/><path d="M20 18v15"/></svg>',
+            '<svg viewBox="0 0 40 40"><path d="M7 30l10-10 6 5 10-15"/><path d="M26 10h7v7"/><path d="M8 12l7 7"/><path d="M15 12l-7 7"/></svg>',
+            '<svg viewBox="0 0 40 40"><rect x="9" y="5" width="22" height="30" rx="3"/><path d="M14 13h12M14 19h12M14 25h8"/><path d="M14 30h5"/></svg>',
+            '<svg viewBox="0 0 40 40"><path d="M6 32V8M6 32h28"/><path d="M10 26l8-8 6 5 9-13"/><path d="M27 10h6v6"/></svg>'
+          ]
+          for old, new in zip(learn_old, learn_new):
+              s = s.replace(old, new, 1)
+
+          # Four trust icons: Beginner Friendly, Structured Learning, Real Market Concepts, Focus on Risk Awareness.
+          trust_old = [
+            '<svg viewBox="0 0 30 30"><circle cx="10" cy="9" r="4"/><circle cx="21" cy="10" r="3"/><path d="M3 24c0-5 3-8 7-8s7 3 7 8M17 18c4-2 9 1 9 6"/></svg>',
+            '<svg viewBox="0 0 30 30"><circle cx="15" cy="15" r="11"/><path d="M15 8v8l5 3"/></svg>',
+            '<svg viewBox="0 0 30 30"><path d="M5 25V14h5v11M13 25V9h5v16M21 25V4h5v21"/></svg>',
+            '<svg viewBox="0 0 30 30"><path d="M15 3l10 4v7c0 6-4 10-10 13C9 24 5 20 5 14V7z"/><path d="M10 15l3 3 7-8"/></svg>'
+          ]
+          trust_new = [
+            '<svg viewBox="0 0 30 30"><circle cx="10" cy="9" r="4"/><circle cx="21" cy="10" r="3"/><path d="M3 25c0-5 3-8 7-8s7 3 7 8M17 19c4-2 9 1 9 6"/></svg>',
+            '<svg viewBox="0 0 30 30"><circle cx="15" cy="15" r="11"/><path d="M15 8v7l5 3"/><path d="M15 2v3M15 25v3"/></svg>',
+            '<svg viewBox="0 0 30 30"><path d="M5 25V15h5v10M13 25V10h5v15M21 25V5h5v20"/><path d="M4 25h23"/></svg>',
+            '<svg viewBox="0 0 30 30"><path d="M15 3l10 4v7c0 6-4 10-10 13C9 24 5 20 5 14V7z"/><path d="M10 15l3 3 7-8"/></svg>'
+          ]
+          for old, new in zip(trust_old, trust_new):
+              s = s.replace(old, new, 1)
+
+          # Style the graduation-cap kicker icon.
+          old_kicker_css = '.lead-kicker{font-size:11px;letter-spacing:.2em;font-weight:800;color:#526d89}'
+          new_kicker_css = '.lead-kicker{font-size:11px;letter-spacing:.2em;font-weight:800;color:#526d89;display:flex;align-items:center;gap:9px}.kicker-icon{width:20px;height:20px;stroke:#526d89;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}'
+          s = s.replace(old_kicker_css, new_kicker_css, 1)
 
           p.write_text(s, encoding='utf-8')
           PY
@@ -41,5 +105,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
-          git diff --cached --quiet || git commit -m "Fix hero market artwork position"
+          git diff --cached --quiet || git commit -m "Add 12 professional SVG icons"
           git push
