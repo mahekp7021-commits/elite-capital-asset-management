@@ -16,7 +16,7 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Apply hero artwork and 12 SVG icons
+      - name: Apply hero artwork, 12 SVG icons and clean navigation
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -36,31 +36,14 @@ jobs:
           s = s.replace(old_point_css, new_point_css, 1)
 
           replacements = [
-            (
-              '<span class="point-icon">▱</span>',
-              '<span class="point-icon"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M6 9h10c5 0 9 4 9 9v14c-2-3-5-5-9-5H6z"/><path d="M34 9H24c-5 0-9 4-9 9v14c2-3 5-5 9-5h10z"/><path d="M20 18v14"/></svg></span>'
-            ),
-            (
-              '<span class="point-icon">▥</span>',
-              '<span class="point-icon"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M6 33h28"/><rect x="8" y="21" width="6" height="10" rx="1"/><rect x="17" y="15" width="6" height="16" rx="1"/><rect x="26" y="9" width="6" height="22" rx="1"/><path d="M9 17l7-6 5 3 10-8"/></svg></span>'
-            ),
-            (
-              '<span class="point-icon">♢</span>',
-              '<span class="point-icon"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 4l13 5v9c0 8-5 13-13 18C12 31 7 26 7 18V9z"/><path d="M13 19l5 5 10-11"/></svg></span>'
-            ),
-            (
-              '<div class="lead-kicker">◈ &nbsp; TAKE THE FIRST STEP</div>',
-              '<div class="lead-kicker"><svg class="kicker-icon" viewBox="0 0 40 40" aria-hidden="true"><path d="M5 13l15-7 15 7-15 7z"/><path d="M11 17v7c4 3 14 3 18 0v-7"/><path d="M35 14v9"/><path d="M35 26a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/></svg> TAKE THE FIRST STEP</div>'
-            ),
-            (
-              '<span class="lead-kicker">',
-              '<span class="lead-kicker">'
-            )
+            ('<span class="point-icon">▱</span>', '<span class="point-icon"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M6 9h10c5 0 9 4 9 9v14c-2-3-5-5-9-5H6z"/><path d="M34 9H24c-5 0-9 4-9 9v14c2-3 5-5 9-5h10z"/><path d="M20 18v14"/></svg></span>'),
+            ('<span class="point-icon">▥</span>', '<span class="point-icon"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M6 33h28"/><rect x="8" y="21" width="6" height="10" rx="1"/><rect x="17" y="15" width="6" height="16" rx="1"/><rect x="26" y="9" width="6" height="22" rx="1"/><path d="M9 17l7-6 5 3 10-8"/></svg></span>'),
+            ('<span class="point-icon">♢</span>', '<span class="point-icon"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 4l13 5v9c0 8-5 13-13 18C12 31 7 26 7 18V9z"/><path d="M13 19l5 5 10-11"/></svg></span>'),
+            ('<div class="lead-kicker">◈ &nbsp; TAKE THE FIRST STEP</div>', '<div class="lead-kicker"><svg class="kicker-icon" viewBox="0 0 40 40" aria-hidden="true"><path d="M5 13l15-7 15 7-15 7z"/><path d="M11 17v7c4 3 14 3 18 0v-7"/><path d="M35 14v9"/><circle cx="35" cy="28" r="2"/></svg> TAKE THE FIRST STEP</div>')
           ]
           for old, new in replacements:
               s = s.replace(old, new, 1)
 
-          # Four learning icons: Stock Market Basics, Calls & Puts, Premium & Expiry, Risk & Reward.
           learn_old = [
             '<svg viewBox="0 0 40 40"><path d="M8 9h9a7 7 0 0 1 7 7v16a7 7 0 0 0-7-7H8z"/><path d="M32 9h-9a7 7 0 0 0-7 7v16a7 7 0 0 1 7-7h9z"/><path d="M20 16v16"/></svg>',
             '<svg viewBox="0 0 40 40"><path d="M8 29l9-9 6 5 10-14"/><path d="M25 11h8v8"/><path d="M8 13l7 7"/><path d="M15 13l-7 7"/></svg>',
@@ -76,7 +59,6 @@ jobs:
           for old, new in zip(learn_old, learn_new):
               s = s.replace(old, new, 1)
 
-          # Four trust icons: Beginner Friendly, Structured Learning, Real Market Concepts, Focus on Risk Awareness.
           trust_old = [
             '<svg viewBox="0 0 30 30"><circle cx="10" cy="9" r="4"/><circle cx="21" cy="10" r="3"/><path d="M3 24c0-5 3-8 7-8s7 3 7 8M17 18c4-2 9 1 9 6"/></svg>',
             '<svg viewBox="0 0 30 30"><circle cx="15" cy="15" r="11"/><path d="M15 8v8l5 3"/></svg>',
@@ -92,10 +74,13 @@ jobs:
           for old, new in zip(trust_old, trust_new):
               s = s.replace(old, new, 1)
 
-          # Style the graduation-cap kicker icon.
           old_kicker_css = '.lead-kicker{font-size:11px;letter-spacing:.2em;font-weight:800;color:#526d89}'
           new_kicker_css = '.lead-kicker{font-size:11px;letter-spacing:.2em;font-weight:800;color:#526d89;display:flex;align-items:center;gap:9px}.kicker-icon{width:20px;height:20px;stroke:#526d89;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}'
           s = s.replace(old_kicker_css, new_kicker_css, 1)
+
+          # Remove header links whose sections do not exist on this compact landing page.
+          for link in ['<a href="#learn">Market Concepts</a>', '<a href="#learn">Risk Awareness</a>', '<a href="#leadForm">FAQ</a>']:
+              s = s.replace(link, '', 1)
 
           p.write_text(s, encoding='utf-8')
           PY
@@ -105,5 +90,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
-          git diff --cached --quiet || git commit -m "Add 12 professional SVG icons"
+          git diff --cached --quiet || git commit -m "Remove unused header menu items"
           git push
