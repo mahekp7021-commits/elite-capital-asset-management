@@ -1,0 +1,87 @@
+name: Clean ECAM form actions
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  clean:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Update page
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+
+          # Remove the unused header CTA and hero CTA.
+          s = s.replace('<a class="nav-cta" href="#leadForm">Get Educational Resources <span>→</span></a>', '')
+          s = s.replace('<div class="actions"><a class="btn btn-main" href="#leadForm">Start Learning Now <span>→</span></a></div>', '')
+
+          # Remove the mobile floating CTA as well; the lead form itself remains the single conversion action.
+          s = re.sub(r'\n<a class="mobile-cta"[^>]*>.*?</a>', '', s, count=1)
+
+          # Make the submit button visibly respond and prevent repeated submissions.
+          if '.form-submit:disabled{' not in s:
+              s = s.replace('</style>', '.form-submit:disabled{opacity:.72;cursor:wait;transform:none}.form-submit:disabled span{opacity:.9}\n</style>', 1)
+
+          script = '''<script>
+          (function(){
+            const form=document.getElementById("leadForm");
+            const frame=document.getElementById("leadSubmitFrame");
+            const status=document.getElementById("formStatus");
+            const submitBtn=form ? form.querySelector(".form-submit") : null;
+            if(!form||!frame||!status||!submitBtn)return;
+
+            let submitted=false;
+            const defaultButtonHTML='Submit Interest <span>→</span>';
+
+            form.addEventListener("submit",function(){
+              if(submitted)return;
+              submitted=true;
+              submitBtn.disabled=true;
+              submitBtn.setAttribute("aria-busy","true");
+              submitBtn.innerHTML='<span>Submitting…</span>';
+              status.className="form-status show";
+              status.textContent="Submitting your interest…";
+            });
+
+            frame.addEventListener("load",function(){
+              if(!submitted)return;
+              submitted=false;
+              status.className="form-status show";
+              status.textContent="Thank you. Your educational request has been received.";
+              form.reset();
+              submitBtn.disabled=false;
+              submitBtn.removeAttribute("aria-busy");
+              submitBtn.innerHTML=defaultButtonHTML;
+            });
+          })();
+          </script>'''
+
+          s = re.sub(r'<script>\s*\(function\(\)\{.*?\}\)\(\);\s*</script>', script, s, count=1, flags=re.S)
+
+          p.write_text(s, encoding='utf-8')
+          PY
+
+      - name: Commit changes
+        run: |
+          if git diff --quiet -- index.html; then
+            echo "No changes needed."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Remove unused CTAs and improve form submit feedback"
+          git push
