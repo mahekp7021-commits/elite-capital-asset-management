@@ -1,0 +1,70 @@
+name: Connect Google Sheet Lead Form
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  connect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Connect lead form
+        env:
+          SHEET_ENDPOINT: https://script.google.com/macros/s/AKfycbykKzqN32OLf6V9Pts4EQ4JlV-b7ti-h--7i-4d8GEcargeCG_rzfW4wwLVgjRAre3Z/exec
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+          import re
+
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          endpoint = os.environ['SHEET_ENDPOINT']
+
+          old = 'action="https://formspree.io/f/YOUR_FORM_ID" method="POST"'
+          new = f'action="{endpoint}" method="POST" target="leadSubmitFrame"'
+          if old in s:
+              s = s.replace(old, new, 1)
+
+          if 'class="form-status"' not in s:
+              s = s.replace(
+                  '</form>',
+                  '<div class="form-status" id="formStatus" aria-live="polite"></div></form>',
+                  1
+              )
+
+          if '.form-status{' not in s:
+              s = s.replace(
+                  '</style>',
+                  '.form-status{display:none;margin-top:10px;padding:10px 12px;border-radius:9px;background:#eef9f2;color:#087d47;font-size:12px;font-weight:700}.form-status.show{display:block}\n</style>',
+                  1
+              )
+
+          if 'id="leadSubmitFrame"' not in s:
+              s = s.replace(
+                  '</body>',
+                  '<iframe name="leadSubmitFrame" id="leadSubmitFrame" title="Lead submission" style="display:none" aria-hidden="true"></iframe>\n<script>\n(function(){\n  const form=document.getElementById("leadForm");\n  const frame=document.getElementById("leadSubmitFrame");\n  const status=document.getElementById("formStatus");\n  if(!form||!frame||!status)return;\n  let submitted=false;\n  form.addEventListener("submit",function(){\n    submitted=true;\n    status.className="form-status";\n    status.textContent="Submitting your interest…";\n  });\n  frame.addEventListener("load",function(){\n    if(!submitted)return;\n    submitted=false;\n    status.className="form-status show";\n    status.textContent="Thank you. Your educational request has been received.";\n    form.reset();\n  });\n})();\n</script>\n</body>',
+                  1
+              )
+
+          p.write_text(s, encoding='utf-8')
+          PY
+
+      - name: Commit changes
+        run: |
+          if git diff --quiet -- index.html; then
+            echo "No changes needed."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Connect lead form to Google Sheet"
+          git push
