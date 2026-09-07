@@ -22,10 +22,17 @@ jobs:
           from pathlib import Path
           p = Path('index.html')
           s = p.read_text(encoding='utf-8')
-          old = 'mix-blend-mode:multiply;filter:saturate(1.08) contrast(1.02);'
-          new = 'mix-blend-mode:normal;opacity:1;filter:saturate(1.08) contrast(1.02);'
-          if old in s:
-              s = s.replace(old, new, 1)
+
+          old_layer = 'mix-blend-mode:multiply;filter:saturate(1.08) contrast(1.02);'
+          new_layer = 'mix-blend-mode:normal;opacity:1;filter:saturate(1.08) contrast(1.02);'
+          if old_layer in s:
+              s = s.replace(old_layer, new_layer, 1)
+
+          old_bg = 'background:#edf8ff url("assets/hero/hero-visual.png") center/cover no-repeat'
+          new_bg = 'background:#edf8ff url("assets/hero/hero-visual.png") 40% center/115% auto no-repeat'
+          if old_bg in s:
+              s = s.replace(old_bg, new_bg, 1)
+
           p.write_text(s, encoding='utf-8')
           PY
 
@@ -34,5 +41,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
-          git diff --cached --quiet || git commit -m "Fix hero market artwork layering"
+          git diff --cached --quiet || git commit -m "Fix hero market artwork position"
           git push
