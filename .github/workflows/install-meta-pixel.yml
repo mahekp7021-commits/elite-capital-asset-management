@@ -30,8 +30,8 @@ jobs:
 
           lead_marker = "ECAM_META_PIXEL_LEAD_EVENT"
           if lead_marker not in html:
-              target = 'status.textContent=\\"Thank you. Your educational request has been received.\\";'
-              replacement = target + f'\\n    /* {lead_marker} */\\n    if(typeof window.fbq === "function"){{fbq("track","Lead");}}'
+              target = 'status.textContent="Thank you. Your educational request has been received.";'
+              replacement = target + f'\n    /* {lead_marker} */\n    if(typeof window.fbq === "function"){{fbq("track","Lead");}}'
               if target not in html:
                   raise SystemExit("Lead success handler target not found; refusing to modify index.html")
               html = html.replace(target, replacement, 1)
