@@ -22,6 +22,19 @@
 .form-status{display:none;margin-top:10px;padding:10px 12px;border-radius:9px;background:#eef9f2;color:#087d47;font-size:12px;font-weight:700}.form-status.show{display:block}
 .form-submit:disabled{opacity:.72;cursor:wait;transform:none}.form-submit:disabled span{opacity:.9}
 </style>
+<!-- ECAM_META_PIXEL_1433494675310796 -->
+<script>
+!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+ n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+ n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+ t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '1433494675310796');
+fbq('track', 'PageView');
+</script>
+<noscript><img height="1" width="1" style="display:none"
+src="https://www.facebook.com/tr?id=1433494675310796&ev=PageView&noscript=1" /></noscript>
+<!-- /ECAM_META_PIXEL_1433494675310796 -->
 </head>
 <body>
 <header class="header"><nav class="container nav"><a href="#top"><img class="logo" src="assets/logo/ecam-logo.png" alt="Elite Capital Asset Management"></a><div class="navlinks"><a class="active" href="#top">Home</a><a href="#learn">What You'll Learn</a></div></nav></header>
@@ -58,6 +71,8 @@
     submitted=false;
     status.className="form-status show";
     status.textContent="Thank you. Your educational request has been received.";
+    /* ECAM_META_PIXEL_LEAD_EVENT */
+    if(typeof window.fbq === "function"){fbq("track","Lead");}
     form.reset();
     submitBtn.disabled=false;
     submitBtn.removeAttribute("aria-busy");
