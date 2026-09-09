@@ -1,0 +1,101 @@
+name: Update ECAM Lead Form Fields
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-form:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Update lead form only
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+
+          endpoint = 'https://script.google.com/macros/s/AKfycbykKzqN32OLf6V9Pts4EQ4JlV-b7ti-h--7i-4d8GEcargeCG_rzfW4wwLVgjRAre3Z/exec'
+          s = re.sub(
+              r'<form class="lead-card" id="leadForm"[^>]*>',
+              f'<form class="lead-card" id="leadForm" action="{endpoint}" method="POST" target="leadSubmitFrame">',
+              s,
+              count=1
+          )
+
+          old_fields = re.compile(r'<div class="lead-fields">.*?</div>\n<button class="btn btn-main form-submit"', re.S)
+          new_fields = '''<div class="lead-fields">
+          <div class="field full"><input name="name" placeholder="Enter Your Name" autocomplete="name" required></div>
+          <div class="field"><input name="email" type="email" placeholder="Enter Your Email" autocomplete="email" required></div>
+          <div class="field"><input name="mobile" placeholder="Enter Your Phone No." autocomplete="tel" inputmode="tel" required></div>
+          <div class="field"><input name="city" placeholder="Enter Your City" autocomplete="address-level2" required></div>
+          <div class="field"><input name="state" placeholder="Enter Your State" autocomplete="address-level1" required></div>
+          <div class="field full"><select name="topic" required>
+          <option value="">Select Services</option>
+          <option>Nifty Option</option>
+          <option>Bank Nifty Option</option>
+          <option>Stock Option</option>
+          <option>Nifty Future</option>
+          <option>Bank Nifty Future</option>
+          <option>Stock Future</option>
+          <option>Equity Cash</option>
+          <option>Commodity</option>
+          <option>HNI Option</option>
+          </select></div>
+          <div class="field full"><select name="fund_to_trade" required>
+          <option value="">Fund to Trade?</option>
+          <option>Below ₹50,000</option>
+          <option>₹50,000 – ₹1 Lakh</option>
+          <option>₹1 – ₹5 Lakh</option>
+          <option>₹5 – ₹10 Lakh</option>
+          <option>Above ₹10 Lakh</option>
+          </select></div>
+          <div class="field full"><select name="loss_faced" required>
+          <option value="">How Much Loss Faced?</option>
+          <option>No Loss / First Time</option>
+          <option>Below ₹25,000</option>
+          <option>₹25,000 – ₹50,000</option>
+          <option>₹50,000 – ₹1 Lakh</option>
+          <option>Above ₹1 Lakh</option>
+          </select></div>
+          <div class="field full"><textarea name="message" placeholder="Enter Your Message, What is in Your Mind ???? Like - 'I am an options trader i want sebi registered advise' or 'i want your advise for my trading'" rows="3"></textarea></div>
+          </div>
+          <button class="btn btn-main form-submit"'''
+          s2, n = old_fields.subn(new_fields, s, count=1)
+          if n != 1:
+              raise SystemExit('Lead form fields block not found; no changes committed.')
+          s = s2
+
+          s = s.replace('https://wa.me/919769190408', 'https://wa.me/919930876896', 1)
+          s = s.replace('https://t.me/+919769190408', 'https://t.me/+919930876896', 1)
+
+          css_anchor = '.lead-card .field input,.lead-card .field select{height:42px;border-radius:7px;font-size:13px}'
+          css_new = '.lead-card .field input,.lead-card .field select,.lead-card .field textarea{height:42px;border-radius:7px;font-size:13px}.lead-card .field textarea{width:100%;min-height:84px;border:1px solid #b9cce0;border-radius:7px;background:#fff;color:#29435f;padding:10px 13px;outline:0;resize:vertical;font-family:inherit;line-height:1.4}.lead-card .field textarea:focus{border-color:#2e91df;box-shadow:0 0 0 3px #2e91df12}'
+          if css_anchor in s:
+              s = s.replace(css_anchor, css_new, 1)
+
+          p.write_text(s, encoding='utf-8')
+          PY
+
+      - name: Commit and remove updater
+        run: |
+          if git diff --quiet -- index.html; then
+            echo "No index.html changes needed."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Expand ECAM lead form fields and update contacts"
+          git rm .github/workflows/update-lead-form-fields.yml
+          git commit -m "Remove one-time lead form updater"
+          git push
