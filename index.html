@@ -167,112 +167,19 @@ src="https://www.facebook.com/tr?id=1433494675310796&ev=PageView&noscript=1" /><
   const frame=document.getElementById("leadSubmitFrame");
   const status=document.getElementById("formStatus");
   const submitBtn=form ? form.querySelector(".form-submit") : null;
-  const mobileField=document.getElementById("mobileField");
-  const otpPanel=document.getElementById("otpPanel");
-  const otpCode=document.getElementById("otpCode");
-  const verifyBtn=document.getElementById("verifyOtpBtn");
-  const otpError=document.getElementById("otpError");
-  const mobileQuality=document.getElementById("mobileQuality");
-  if(!form||!frame||!status||!submitBtn||!mobileField||!otpPanel||!otpCode||!verifyBtn)return;
+  if(!form||!frame||!status||!submitBtn)return;
 
   let submitted=false;
-  let otpVerified=false;
-  let firebaseIdToken="";
-  let otpMobile="";
-  let sendingOtp=false;
   const defaultButtonHTML='Submit Interest <span>→</span>';
 
-  function cleanMobile(v){return String(v||"").replace(/\D/g,"").slice(0,10);}
-  function showError(msg){otpError.textContent=msg;otpError.className="otp-error show";}
-  function clearError(){otpError.textContent="";otpError.className="otp-error";}
-
-  mobileField.addEventListener("input",function(){
-    this.value=cleanMobile(this.value);
-    otpVerified=false; firebaseIdToken=""; otpMobile="";
-  });
-
-  form.addEventListener("submit",async function(e){
+  form.addEventListener("submit",function(){
     if(submitted)return;
-    e.preventDefault();
-    clearError();
-
-    const mobile=cleanMobile(mobileField.value);
-    mobileField.value=mobile;
-    if(!/^[6-9]\d{9}$/.test(mobile)){
-      status.className="form-status show";
-      status.textContent="Please enter a valid 10-digit Indian mobile number.";
-      return;
-    }
-
-    if(otpVerified && otpMobile===mobile){
-      submitted=true;
-      submitBtn.disabled=true;
-      submitBtn.setAttribute("aria-busy","true");
-      submitBtn.innerHTML='<span>Submitting…</span>';
-      status.className="form-status show";
-      status.textContent="Submitting your verified enquiry…";
-      let hidden=form.querySelector('input[name="firebase_id_token"]');
-      if(!hidden){hidden=document.createElement("input");hidden.type="hidden";hidden.name="firebase_id_token";form.appendChild(hidden);}
-      hidden.value=firebaseIdToken;
-      let verified=form.querySelector('input[name="otp_verified"]');
-      if(!verified){verified=document.createElement("input");verified.type="hidden";verified.name="otp_verified";form.appendChild(verified);}
-      verified.value="true";
-      let vMobile=form.querySelector('input[name="verified_mobile"]');
-      if(!vMobile){vMobile=document.createElement("input");vMobile.type="hidden";vMobile.name="verified_mobile";form.appendChild(vMobile);}
-      vMobile.value=mobile;
-      HTMLFormElement.prototype.submit.call(form);
-      return;
-    }
-
-    if(sendingOtp)return;
-    sendingOtp=true;
+    submitted=true;
     submitBtn.disabled=true;
-    submitBtn.innerHTML='<span>Sending OTP…</span>';
+    submitBtn.setAttribute("aria-busy","true");
+    submitBtn.innerHTML='<span>Submitting…</span>';
     status.className="form-status show";
-    status.textContent="Sending OTP to your mobile…";
-    try{
-      await window.ECAMFirebaseOTP.send(mobile);
-      otpMobile=mobile;
-      otpPanel.className="otp-panel show";
-      otpCode.value="";
-      otpCode.focus();
-      submitBtn.disabled=false;
-      submitBtn.innerHTML=defaultButtonHTML;
-      status.textContent="OTP sent. Enter the 6-digit code above.";
-    }catch(err){
-      submitBtn.disabled=false;
-      submitBtn.innerHTML=defaultButtonHTML;
-      status.className="form-status show";
-      status.textContent="Unable to send OTP. Please try again.";
-      showError(err && err.message ? err.message : "OTP could not be sent.");
-    }finally{sendingOtp=false;}
-  });
-
-  verifyBtn.addEventListener("click",async function(){
-    clearError();
-    const code=otpCode.value.replace(/\D/g,"").slice(0,6);
-    if(code.length!==6){showError("Please enter the 6-digit OTP.");return;}
-    verifyBtn.disabled=true;
-    verifyBtn.textContent="Verifying…";
-    try{
-      const result=await window.ECAMFirebaseOTP.verify(code);
-      const mobile=cleanMobile(mobileField.value);
-      if(result.phoneNumber!=="+91"+mobile){
-        throw new Error("The verified mobile number does not match the form number.");
-      }
-      otpVerified=true;
-      firebaseIdToken=result.idToken;
-      otpMobile=mobile;
-      mobileQuality.value="OTP VERIFIED";
-      otpPanel.className="otp-panel show";
-      status.className="form-status show";
-      status.textContent="Mobile number verified. Submit the form now.";
-      verifyBtn.textContent="Verified ✓";
-    }catch(err){
-      showError(err && err.message ? err.message : "Invalid OTP. Please try again.");
-      verifyBtn.disabled=false;
-      verifyBtn.textContent="Verify OTP";
-    }
+    status.textContent="Submitting your interest…";
   });
 
   frame.addEventListener("load",function(){
@@ -281,8 +188,6 @@ src="https://www.facebook.com/tr?id=1433494675310796&ev=PageView&noscript=1" /><
     status.className="form-status show";
     status.textContent="Thank you. Your educational request has been received.";
     form.reset();
-    otpPanel.className="otp-panel";
-    otpVerified=false; firebaseIdToken=""; otpMobile="";
     submitBtn.disabled=false;
     submitBtn.removeAttribute("aria-busy");
     submitBtn.innerHTML=defaultButtonHTML;
