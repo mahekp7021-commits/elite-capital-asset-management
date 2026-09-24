@@ -51,14 +51,15 @@ let confirmationResult = null;
 let recaptchaVerifier = null;
 
 async function createRecaptchaVerifier() {
-  if (recaptchaVerifier) {
-    try { recaptchaVerifier.clear(); } catch (e) {}
-    recaptchaVerifier = null;
-  }
+  if (recaptchaVerifier) return recaptchaVerifier;
 
-  recaptchaVerifier = new RecaptchaVerifier(auth, "recaptcha-container", {
+  recaptchaVerifier = new RecaptchaVerifier(auth, "getOtpBtn", {
     size: "invisible",
     "expired-callback": () => {
+      try { recaptchaVerifier.clear(); } catch (e) {}
+      recaptchaVerifier = null;
+    },
+    "error-callback": () => {
       try { recaptchaVerifier.clear(); } catch (e) {}
       recaptchaVerifier = null;
     }
@@ -71,14 +72,8 @@ window.ECAMFirebaseOTP = {
   async send(mobile) {
     const appVerifier = await createRecaptchaVerifier();
     const phone = "+91" + mobile;
-    try {
-      confirmationResult = await signInWithPhoneNumber(auth, phone, appVerifier);
-      return true;
-    } catch (error) {
-      try { appVerifier.clear(); } catch (e) {}
-      recaptchaVerifier = null;
-      throw error;
-    }
+    confirmationResult = await signInWithPhoneNumber(auth, phone, appVerifier);
+    return true;
   },
   async verify(code) {
     if (!confirmationResult) throw new Error("OTP session expired. Please request a new OTP.");
