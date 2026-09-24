@@ -180,113 +180,13 @@ src="https://www.facebook.com/tr?id=1433494675310796&ev=PageView&noscript=1" /><
   const frame=document.getElementById("leadSubmitFrame");
   const status=document.getElementById("formStatus");
   const submitBtn=form ? form.querySelector(".form-submit") : null;
-  const mobileField=document.getElementById("mobileField");
-  const getOtpBtn=document.getElementById("getOtpBtn");
-  const otpPanel=document.getElementById("otpPanel");
-  const otpCode=document.getElementById("otpCode");
-  const verifyOtpBtn=document.getElementById("verifyOtpBtn");
-  const resendOtpBtn=document.getElementById("resendOtpBtn");
-  const otpError=document.getElementById("otpError");
-  const otpMessage=document.getElementById("otpMessage");
-  const profileStep=document.getElementById("profileStep");
-  const verifiedBadge=document.getElementById("verifiedBadge");
-  const otpVerified=document.getElementById("otpVerified");
-  const verifiedMobile=document.getElementById("verifiedMobile");
-  const mobileQuality=document.getElementById("mobileQuality");
-  const formTime=document.getElementById("formTime");
-  if(!form||!frame||!status||!submitBtn||!mobileField||!getOtpBtn||!otpPanel||!verifyOtpBtn||!profileStep)return;
+  if(!form||!frame||!status||!submitBtn)return;
 
-  let otpSent=false, mobileVerified=false, submitted=false;
+  let submitted=false;
   const defaultButtonHTML='Submit Interest <span>→</span>';
 
-  function validMobile(){
-    const mobile=mobileField.value.replace(/\D/g,"");
-    mobileField.value=mobile;
-    return /^[6-9]\d{9}$/.test(mobile);
-  }
-
-  function setError(message){
-    otpError.textContent=message||"";
-  }
-
-  async function sendOtp(){
-    if(!validMobile()){
-      setError("Please enter a valid 10-digit Indian mobile number.");
-      mobileField.focus();
-      return;
-    }
-    setError("");
-    getOtpBtn.disabled=true;
-    getOtpBtn.textContent="Sending OTP…";
-    try{
-      await window.ECAMFirebaseOTP.send(mobileField.value);
-      otpSent=true;
-      otpPanel.classList.add("show");
-      otpMessage.textContent="We sent a verification code to +91 " + mobileField.value + ".";
-      otpCode.focus();
-      getOtpBtn.textContent="OTP Sent";
-    }catch(error){
-      otpSent=false;
-      getOtpBtn.disabled=false;
-      getOtpBtn.textContent="Get OTP";
-      setError(error && error.message ? error.message : "Unable to send OTP. Please try again.");
-    }
-  }
-
-  getOtpBtn.addEventListener("click",sendOtp);
-
-  verifyOtpBtn.addEventListener("click",async function(){
-    if(!otpSent)return;
-    const code=otpCode.value.trim();
-    if(!/^\d{6}$/.test(code)){
-      setError("Please enter the 6-digit OTP.");
-      otpCode.focus();
-      return;
-    }
-    setError("");
-    verifyOtpBtn.disabled=true;
-    verifyOtpBtn.textContent="Verifying…";
-    try{
-      const result=await window.ECAMFirebaseOTP.verify(code);
-      const expected="+91"+mobileField.value;
-      if(result.phoneNumber && result.phoneNumber!==expected) throw new Error("The verified number does not match the entered mobile number.");
-      mobileVerified=true;
-      mobileField.readOnly=true;
-      mobileField.classList.add("mobile-locked");
-      getOtpBtn.style.display="none";
-      otpPanel.classList.remove("show");
-      verifiedBadge.style.display="block";
-      profileStep.classList.add("show");
-      otpVerified.value="true";
-      verifiedMobile.value=mobileField.value;
-      mobileQuality.value="OTP VERIFIED";
-      formTime.value=String(Date.now());
-      status.className="form-status show";
-      status.textContent="Mobile verified. Please complete your learning profile below.";
-      setTimeout(function(){
-        const first=profileStep.querySelector("input,select,textarea");
-        if(first)first.focus();
-      },50);
-    }catch(error){
-      setError(error && error.message ? error.message : "Invalid OTP. Please try again.");
-      verifyOtpBtn.disabled=false;
-      verifyOtpBtn.textContent="Verify";
-    }
-  });
-
-  resendOtpBtn.addEventListener("click",sendOtp);
-
-  form.addEventListener("submit",function(event){
-    if(!mobileVerified){
-      event.preventDefault();
-      status.className="form-status show";
-      status.textContent="Please verify your mobile number first.";
-      return;
-    }
-    if(submitted){
-      event.preventDefault();
-      return;
-    }
+  form.addEventListener("submit",function(){
+    if(submitted)return;
     submitted=true;
     submitBtn.disabled=true;
     submitBtn.setAttribute("aria-busy","true");
@@ -301,25 +201,9 @@ src="https://www.facebook.com/tr?id=1433494675310796&ev=PageView&noscript=1" /><
     status.className="form-status show";
     status.textContent="Thank you. Your educational request has been received.";
     form.reset();
-    mobileField.readOnly=false;
-    mobileField.classList.remove("mobile-locked");
-    getOtpBtn.style.display="";
-    getOtpBtn.disabled=false;
-    getOtpBtn.textContent="Get OTP";
-    otpPanel.classList.remove("show");
-    verifiedBadge.style.display="none";
-    profileStep.classList.remove("show");
-    otpVerified.value="";
-    verifiedMobile.value="";
-    mobileQuality.value="";
-    formTime.value="";
-    otpCode.value="";
-    setError("");
     submitBtn.disabled=false;
     submitBtn.removeAttribute("aria-busy");
     submitBtn.innerHTML=defaultButtonHTML;
-    mobileVerified=false;
-    otpSent=false;
   });
 })();
 </script>
