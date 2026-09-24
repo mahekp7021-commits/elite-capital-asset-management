@@ -56,7 +56,7 @@ async function createRecaptchaVerifier() {
     recaptchaVerifier = null;
   }
 
-  recaptchaVerifier = new RecaptchaVerifier(auth, "getOtpBtn", {
+  recaptchaVerifier = new RecaptchaVerifier(auth, "recaptcha-container", {
     size: "invisible",
     "expired-callback": () => {
       try { recaptchaVerifier.clear(); } catch (e) {}
@@ -64,7 +64,6 @@ async function createRecaptchaVerifier() {
     }
   });
 
-  await recaptchaVerifier.render();
   return recaptchaVerifier;
 }
 
