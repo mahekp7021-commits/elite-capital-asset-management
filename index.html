@@ -262,5 +262,162 @@ src="https://www.facebook.com/tr?id=1433494675310796&ev=PageView&noscript=1" /><
   });
 })();
 </script>
+<script>
+document.addEventListener("DOMContentLoaded", function(){
+  const form = document.getElementById("leadForm");
+  const mobileField = document.getElementById("mobileField");
+  const getOtpBtn = document.getElementById("getOtpBtn");
+  const otpPanel = document.getElementById("otpPanel");
+  const otpCode = document.getElementById("otpCode");
+  const verifyOtpBtn = document.getElementById("verifyOtpBtn");
+  const resendOtpBtn = document.getElementById("resendOtpBtn");
+  const otpError = document.getElementById("otpError");
+  const profileStep = document.getElementById("profileStep");
+  const verifiedBadge = document.getElementById("verifiedBadge");
+  const otpVerified = document.getElementById("otpVerified");
+  const verifiedMobile = document.getElementById("verifiedMobile");
+  const mobileQuality = document.getElementById("mobileQuality");
+  const formTime = document.getElementById("formTime");
+  const submitBtn = form ? form.querySelector(".form-submit") : null;
+  const directConnect = form ? form.querySelector(".direct-connect") : null;
+  const privacyNote = form ? form.querySelector(".privacy-note") : null;
+
+  if (!form || !mobileField || !getOtpBtn || !otpPanel || !verifyOtpBtn) return;
+
+  let otpSent = false;
+
+  function cleanMobile(){
+    mobileField.value = mobileField.value.replace(/\D/g,"").slice(0,10);
+    return mobileField.value;
+  }
+
+  function showError(message){
+    otpError.textContent = message || "";
+  }
+
+  function setBusy(button, busy, text){
+    button.disabled = busy;
+    if (busy) {
+      button.dataset.originalText = button.textContent;
+      button.textContent = text;
+    } else if (button.dataset.originalText) {
+      button.textContent = button.dataset.originalText;
+    }
+  }
+
+  async function sendOtp(){
+    const mobile = cleanMobile();
+
+    if (!/^[6-9]\d{9}$/.test(mobile)) {
+      showError("Please enter a valid 10-digit Indian mobile number.");
+      mobileField.focus();
+      return;
+    }
+
+    if (!window.ECAMFirebaseOTP || typeof window.ECAMFirebaseOTP.send !== "function") {
+      showError("OTP service is still loading. Please refresh the page and try again.");
+      return;
+    }
+
+    showError("");
+    setBusy(getOtpBtn, true, "Sending OTP...");
+
+    try {
+      await window.ECAMFirebaseOTP.send(mobile);
+      otpSent = true;
+      otpPanel.classList.add("show");
+      document.getElementById("otpMessage").textContent =
+        "Enter the 6-digit verification code sent to +91 " + mobile;
+      otpCode.focus();
+    } catch (error) {
+      console.error("ECAM Firebase OTP error:", error);
+      const code = error && error.code ? error.code : "";
+      let message = "Unable to send OTP. Please try again.";
+      if (code.includes("api-key-not-valid")) message = "Firebase configuration error. Please refresh and try again.";
+      else if (code.includes("invalid-phone-number")) message = "Please enter a valid Indian mobile number.";
+      else if (code.includes("too-many-requests")) message = "Too many attempts. Please try again later.";
+      else if (code.includes("quota-exceeded")) message = "OTP limit reached for now. Please try again later.";
+      else if (error && error.message) message = error.message.replace(/^Firebase:\s*/i,"");
+      showError(message);
+    } finally {
+      setBusy(getOtpBtn, false);
+    }
+  }
+
+  async function verifyOtp(){
+    const code = otpCode.value.replace(/\D/g,"").slice(0,6);
+    otpCode.value = code;
+
+    if (!otpSent) {
+      showError("Please request an OTP first.");
+      return;
+    }
+    if (!/^\d{6}$/.test(code)) {
+      showError("Please enter the 6-digit OTP.");
+      otpCode.focus();
+      return;
+    }
+
+    showError("");
+    setBusy(verifyOtpBtn, true, "Verifying...");
+
+    try {
+      const result = await window.ECAMFirebaseOTP.verify(code);
+      const mobile = mobileField.value;
+
+      if (result.phoneNumber && result.phoneNumber !== "+91" + mobile) {
+        throw new Error("The verified mobile number does not match the entered number.");
+      }
+
+      mobileField.readOnly = true;
+      mobileField.classList.add("mobile-locked");
+      getOtpBtn.style.display = "none";
+      otpPanel.classList.remove("show");
+      verifiedBadge.style.display = "block";
+      profileStep.classList.add("show");
+
+      otpVerified.value = "true";
+      verifiedMobile.value = mobile;
+      mobileQuality.value = "Firebase Phone Auth Verified";
+      formTime.value = new Date().toISOString();
+
+      if (submitBtn) submitBtn.style.display = "inline-flex";
+      if (directConnect) directConnect.style.display = "block";
+      if (privacyNote) privacyNote.style.display = "flex";
+
+      const firstProfileField = profileStep.querySelector("input,select,textarea");
+      if (firstProfileField) firstProfileField.focus();
+    } catch (error) {
+      console.error("ECAM Firebase OTP verification error:", error);
+      showError(error && error.message ? error.message : "Invalid OTP. Please try again.");
+    } finally {
+      setBusy(verifyOtpBtn, false);
+    }
+  }
+
+  getOtpBtn.addEventListener("click", sendOtp);
+  verifyOtpBtn.addEventListener("click", verifyOtp);
+  resendOtpBtn.addEventListener("click", sendOtp);
+
+  mobileField.addEventListener("input", cleanMobile);
+  otpCode.addEventListener("input", function(){
+    otpCode.value = otpCode.value.replace(/\D/g,"").slice(0,6);
+  });
+  otpCode.addEventListener("keydown", function(e){
+    if (e.key === "Enter") {
+      e.preventDefault();
+      verifyOtp();
+    }
+  });
+
+  form.addEventListener("submit", function(e){
+    if (otpVerified.value !== "true") {
+      e.preventDefault();
+      showError("Please verify your mobile number before submitting.");
+      otpPanel.classList.add("show");
+    }
+  });
+});
+</script>
 </body>
 </html>
