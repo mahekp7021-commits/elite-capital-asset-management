@@ -28,6 +28,10 @@
 @media(max-width:560px){.container{width:calc(100% - 26px)}.header{height:64px}.logo{width:176px}.nav-cta{font-size:10px;padding:10px 11px!important}.hero-grid{padding-top:34px}.hero h1{font-size:43px}.hero-copy>p{font-size:14px}.hero-points{display:grid;gap:12px;margin:22px 0}.hero-point{border:0;padding:0}.actions .btn{width:100%}.hero{background-position:62% bottom}.market-inner{gap:12px;padding:10px;flex-wrap:wrap}.market-item{font-size:8px}.learn{padding:35px 0}.learn-row{grid-template-columns:1fr}.learn-card,.learn-card:first-child{padding:12px 0;border-right:0}.trust{padding:24px 0}.trust-row{grid-template-columns:1fr}.trust-item{border-right:0}.trust-disclaimer{padding:17px 0 0;margin-top:12px}.mobile-cta{display:flex;position:fixed;left:12px;right:12px;bottom:12px;z-index:80;justify-content:center;padding:14px;border-radius:13px;background:linear-gradient(100deg,#0969df,#08c4d7,#12c965);color:#fff;font-size:12px;font-weight:800;box-shadow:0 12px 35px #071a3650}}
 .form-status{display:none;margin-top:10px;padding:10px 12px;border-radius:9px;background:#eef9f2;color:#087d47;font-size:12px;font-weight:700}.form-status.show{display:block}
 .form-submit,.direct-connect,.privacy-note{display:block}.form-submit:disabled{opacity:.72;cursor:wait;transform:none}.form-submit:disabled span{opacity:.9}
+
+/* ECAM_INTERACTION_FIX */
+.hero:before,.hero:after{pointer-events:none!important}
+.header,.hero-grid,.hero-grid *,.lead-card,.lead-card *{pointer-events:auto!important}
 </style>
 
 
@@ -176,39 +180,7 @@ src="https://www.facebook.com/tr?id=1433494675310796&ev=PageView&noscript=1" /><
   });
 })();
 </script>
-<script>
-(function(){
-  const form=document.getElementById("leadForm");
-  const frame=document.getElementById("leadSubmitFrame");
-  const status=document.getElementById("formStatus");
-  const submitBtn=form ? form.querySelector(".form-submit") : null;
-  if(!form||!frame||!status||!submitBtn)return;
 
-  let submitted=false;
-  const defaultButtonHTML='Submit Interest <span>→</span>';
-
-  form.addEventListener("submit",function(){
-    if(submitted)return;
-    submitted=true;
-    submitBtn.disabled=true;
-    submitBtn.setAttribute("aria-busy","true");
-    submitBtn.innerHTML='<span>Submitting…</span>';
-    status.className="form-status show";
-    status.textContent="Submitting your interest…";
-  });
-
-  frame.addEventListener("load",function(){
-    if(!submitted)return;
-    submitted=false;
-    status.className="form-status show";
-    status.textContent="Thank you. Your educational request has been received.";
-    form.reset();
-    submitBtn.disabled=false;
-    submitBtn.removeAttribute("aria-busy");
-    submitBtn.innerHTML=defaultButtonHTML;
-  });
-})();
-</script>
 
 <script src="assets/js/lead-quality.js"></script>
 </body>
