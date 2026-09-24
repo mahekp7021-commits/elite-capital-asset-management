@@ -23,6 +23,24 @@
 const SHEET_NAME = "Sheet1";
 const DUPLICATE_WINDOW_MS = 24 * 60 * 60 * 1000;
 
+const BASE_HEADERS = [
+  "Date",
+  "Name",
+  "Email",
+  "Mobile",
+  "City",
+  "State",
+  "Experience",
+  "Trader Status",
+  "Loss Experience",
+  "Loss Segment",
+  "Trading Capital",
+  "Topic",
+  "Message",
+  "Mobile Quality",
+  "Form Time"
+];
+
 const EXTRA_HEADERS = [
   "Mobile E164",
   "Mobile Type",
@@ -152,14 +170,23 @@ function doPost(e) {
 }
 
 function ensureHeaders_(sheet) {
-  const lastColumn = Math.max(sheet.getLastColumn(), 1);
-  const existing = sheet.getRange(1, 1, 1, lastColumn).getValues()[0]
-    .map(String)
-    .map(s => s.trim());
+  const headersToEnsure = BASE_HEADERS.concat(EXTRA_HEADERS);
 
-  EXTRA_HEADERS.forEach(function(header) {
+  const lastColumn = Math.max(sheet.getLastColumn(), 1);
+
+  const existing = sheet
+    .getRange(1, 1, 1, lastColumn)
+    .getValues()[0]
+    .map(function (value) {
+      return String(value || "").trim();
+    });
+
+  headersToEnsure.forEach(function (header) {
     if (existing.indexOf(header) === -1) {
-      sheet.getRange(1, sheet.getLastColumn() + 1).setValue(header);
+      sheet
+        .getRange(1, sheet.getLastColumn() + 1)
+        .setValue(header);
+
       existing.push(header);
     }
   });
@@ -384,7 +411,13 @@ function calculateServerScore_(ctx) {
 
   // Layer 3 — Behaviour (25)
   let l3 = 25;
-  const seconds = Math.max(0, Number(ctx.data.form_duration_sec || 0));
+  let seconds = Math.max(0, Number(ctx.data.form_duration_sec || 0));
+  if (!seconds && ctx.data.form_started_at) {
+    const started = Date.parse(String(ctx.data.form_started_at));
+    if (!isNaN(started)) {
+      seconds = Math.max(0, Math.round((Date.now() - started) / 1000));
+    }
+  }
   if (seconds > 0 && seconds < 7) {
     l3 -= 10;
     flags.push("FORM_TOO_FAST");
