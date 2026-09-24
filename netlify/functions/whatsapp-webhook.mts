@@ -29,7 +29,3 @@ export default async (req: Request) => {
 
   return new Response("Method Not Allowed", { status: 405 });
 };
-
-export const config: Config = {
-  path: "/api/whatsapp-webhook",
-};
