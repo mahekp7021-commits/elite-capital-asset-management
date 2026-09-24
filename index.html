@@ -126,46 +126,9 @@ src="https://www.facebook.com/tr?id=1433494675310796&ev=PageView&noscript=1" /><
   let submitted=false;
   const defaultButtonHTML='Submit Interest <span>→</span>';
 
-  const mobileField=document.getElementById("mobileField");
-  const mobileQuality=document.getElementById("mobileQuality");
-  const formTime=document.getElementById("formTime");
-  const startedAt=Date.now();
-
-  function mobileScore(raw){
-    const n=raw.replace(/\\D/g,"");
-    if(!/^[6-9]\\d{9}$/.test(n)) return "INVALID";
-    if(/^([0-9])\\1{9}$/.test(n)) return "SUSPICIOUS";
-    if(["0123456789","1234567890","9876543210"].includes(n)) return "SUSPICIOUS";
-    return "VALID_FORMAT";
-  }
-
-  form.addEventListener("submit",function(e){
+  form.addEventListener("submit",function(){
     if(submitted)return;
-    const honeypot=form.elements.website;
-    const score=mobileScore(mobileField.value);
-    if(honeypot && honeypot.value){
-      e.preventDefault();
-      status.className="form-status show";
-      status.textContent="Please try again.";
-      return;
-    }
-    if(score==="INVALID"){
-      e.preventDefault();
-      status.className="form-status show";
-      status.textContent="Please enter a valid 10-digit Indian mobile number.";
-      mobileField.focus();
-      return;
-    }
-    if(score==="SUSPICIOUS"){
-      e.preventDefault();
-      status.className="form-status show";
-      status.textContent="Please enter your regular mobile number.";
-      mobileField.focus();
-      return;
-    }
     submitted=true;
-    mobileQuality.value=score;
-    formTime.value=String(Math.round((Date.now()-startedAt)/1000));
     submitBtn.disabled=true;
     submitBtn.setAttribute("aria-busy","true");
     submitBtn.innerHTML='<span>Submitting…</span>';
