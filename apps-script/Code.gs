@@ -47,40 +47,79 @@ const EXTRA_HEADERS = [
 ];
 
 function doPost(e) {
+  const lock = LockService.getScriptLock();
+
   try {
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
-    if (!sheet) throw new Error("Sheet1 not found");
+    const sheet = SpreadsheetApp
+      .getActiveSpreadsheet()
+      .getSheetByName(SHEET_NAME);
+
+    if (!sheet) {
+      throw new Error("Sheet1 not found");
+    }
 
     const data = e.parameter || {};
+
     ensureHeaders_(sheet);
 
     const mobile = normalizeIndianMobile_(data.mobile);
+
     if (!mobile) {
-      return json_({ success: false, error: "Invalid Indian mobile number." });
+      return json_({
+        success: false,
+        error: "Invalid Indian mobile number."
+      });
     }
 
-    // Honeypot: reject silently.
+    // Honeypot
     if (String(data.website || "").trim()) {
-      return json_({ success: false, error: "Rejected." });
+      return json_({
+        success: false,
+        error: "Rejected."
+      });
     }
 
     const now = new Date();
+
+    /*
+     * Serialize history read + append so two near-simultaneous
+     * submissions for the same number cannot both see old history.
+     */
+    lock.waitLock(10000);
+
     const history = getMobileHistory_(sheet, mobile);
 
-    const duplicate24h = history.recentCount > 0;
-    const priorLeads = history.totalCount;
+    const duplicate24h =
+      history.recentCount > 0;
 
-    const network = lookupNetwork_(mobile);
+    const priorLeads =
+      history.totalCount;
 
-    const quality = calculateServerScore_({
-      mobile,
-      data,
-      duplicate24h,
-      priorLeads,
-      network
-    });
+    const network =
+      lookupNetwork_(mobile);
 
-    const row = buildRow_(sheet, data, mobile, now, history, network, quality);
+    const quality =
+      calculateServerScore_({
+        mobile: mobile,
+        data: data,
+        duplicate24h: duplicate24h,
+        priorLeads: priorLeads,
+        network: network,
+        suspiciousCount: history.suspiciousCount,
+        cleanCount: history.cleanCount
+      });
+
+    const row =
+      buildRow_(
+        sheet,
+        data,
+        mobile,
+        now,
+        history,
+        network,
+        quality
+      );
+
     sheet.appendRow(row);
 
     return json_({
@@ -88,14 +127,27 @@ function doPost(e) {
       message: "Lead saved successfully",
       quality_score: quality.score,
       quality_band: quality.band,
+      duplicate_24h: duplicate24h,
+      prior_leads: priorLeads,
       ownership_status: "NOT_VERIFIED"
     });
 
   } catch (error) {
+
     return json_({
       success: false,
-      error: String(error && error.stack ? error.stack : error)
+      error: String(
+        error && error.stack
+          ? error.stack
+          : error
+      )
     });
+
+  } finally {
+
+    try {
+      lock.releaseLock();
+    } catch (_) {}
   }
 }
 
@@ -122,41 +174,127 @@ function normalizeIndianMobile_(value) {
 
 function getMobileHistory_(sheet, mobile) {
   const values = sheet.getDataRange().getValues();
+
   if (values.length < 2) {
-    return { totalCount: 0, recentCount: 0, cleanCount: 0, suspiciousCount: 0 };
+    return {
+      totalCount: 0,
+      recentCount: 0,
+      cleanCount: 0,
+      suspiciousCount: 0
+    };
   }
 
-  const headers = values[0].map(String);
-  const mobileCol = headers.indexOf("Mobile");
-  const dateCol = headers.indexOf("Date");
-  const qualityCol = headers.indexOf("Quality Band");
+  const headers = values[0].map(function (value) {
+    return String(value || "")
+      .trim()
+      .toLowerCase();
+  });
+
+  function findHeader_(name) {
+    return headers.indexOf(name.toLowerCase());
+  }
+
+  const mobileCol = findHeader_("Mobile");
+  const dateCol = findHeader_("Date");
+  const formTimeCol = findHeader_("Form Time");
+  const qualityCol = findHeader_("Quality Band");
+
+  /*
+   * The original ECAM columns place Mobile at column 4 (D).
+   * This fallback keeps history working even if a previous header
+   * was accidentally edited.
+   */
+  const effectiveMobileCol =
+    mobileCol >= 0 ? mobileCol : 3;
 
   let totalCount = 0;
   let recentCount = 0;
   let cleanCount = 0;
   let suspiciousCount = 0;
-  const cutoff = Date.now() - DUPLICATE_WINDOW_MS;
+
+  const cutoff =
+    Date.now() - DUPLICATE_WINDOW_MS;
 
   for (let i = 1; i < values.length; i++) {
-    const rowMobile = normalizeIndianMobile_(values[i][mobileCol]);
-    if (!rowMobile || rowMobile !== mobile) continue;
+
+    const rowMobile =
+      normalizeIndianMobile_(
+        values[i][effectiveMobileCol]
+      );
+
+    if (!rowMobile || rowMobile !== mobile) {
+      continue;
+    }
 
     totalCount++;
 
-    const d = dateCol >= 0 ? values[i][dateCol] : "";
-    const dt = d instanceof Date ? d.getTime() : Date.parse(d);
-    if (dt && dt >= cutoff) recentCount++;
+    /*
+     * Prefer Date column, then Form Time as fallback.
+     */
+    let timestamp = 0;
+
+    if (dateCol >= 0) {
+      const dateValue = values[i][dateCol];
+
+      if (dateValue instanceof Date) {
+        timestamp = dateValue.getTime();
+      } else if (dateValue) {
+        const parsed = Date.parse(String(dateValue));
+        if (!isNaN(parsed)) {
+          timestamp = parsed;
+        }
+      }
+    }
+
+    if (!timestamp && formTimeCol >= 0) {
+      const formTimeValue =
+        values[i][formTimeCol];
+
+      if (formTimeValue instanceof Date) {
+        timestamp = formTimeValue.getTime();
+      } else if (formTimeValue) {
+        const parsed =
+          Date.parse(String(formTimeValue));
+
+        if (!isNaN(parsed)) {
+          timestamp = parsed;
+        }
+      }
+    }
+
+    if (
+      timestamp &&
+      timestamp >= cutoff
+    ) {
+      recentCount++;
+    }
 
     if (qualityCol >= 0) {
-      const band = String(values[i][qualityCol] || "").toUpperCase();
-      if (band === "HIGH") cleanCount++;
-      if (band === "SUSPICIOUS") suspiciousCount++;
+
+      const band =
+        String(
+          values[i][qualityCol] || ""
+        )
+          .trim()
+          .toUpperCase();
+
+      if (band === "HIGH") {
+        cleanCount++;
+      }
+
+      if (band === "SUSPICIOUS") {
+        suspiciousCount++;
+      }
     }
   }
 
-  return { totalCount, recentCount, cleanCount, suspiciousCount };
+  return {
+    totalCount: totalCount,
+    recentCount: recentCount,
+    cleanCount: cleanCount,
+    suspiciousCount: suspiciousCount
+  };
 }
-
 function lookupNetwork_(mobile) {
   const props = PropertiesService.getScriptProperties();
   const endpoint = String(props.getProperty("HLR_ENDPOINT") || "").trim();
